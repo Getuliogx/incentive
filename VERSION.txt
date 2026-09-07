@@ -1,1 +1,1 @@
-2.1.0 - corrige imagem 1920x1080 e adiciona temporada automaticamente ao titulo
+2.2.0 - corrigido upload local da imagem do Incentive e título da temporada

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { config, assertConfig } from './config.js';
 import { parseMetaCommand } from './command.js';
 import { makePublicImageUrl, decodeImageKey, renderSeasonImage, resolveImagePlan } from './image.js';
-import { createGoal } from './incentive.js';
+import { createGoal, uploadGoalImage } from './incentive.js';
 
 assertConfig();
 
@@ -61,7 +61,7 @@ function sendJpeg(res, out) {
 }
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'incentive-meta', version: '2.1.0', tmdb: true, incentive: true });
+  res.json({ ok: true, service: 'incentive-meta', version: '2.2.0', tmdb: true, incentive: true });
 });
 
 app.get('/api/preview', async (req, res) => {
@@ -75,7 +75,7 @@ app.get('/api/preview', async (req, res) => {
     res.json({
       ok: true,
       title: plan.canonicalTitle,
-      goalName: goalName(title, season, plan.resolved.kind),
+      goalName: goalName(plan.canonicalTitle, season, plan.resolved.kind),
       tmdbId: plan.resolved.data.id,
       mediaType: plan.resolved.kind,
       season,
@@ -129,14 +129,14 @@ app.get('/se/meta', async (req, res) => {
     const rendered = await renderSeasonImage(parsed.title, season);
     if (!rendered?.image?.length) throw new Error('Falha ao gerar imagem 1920x1080');
 
-    const imageUrl = makePublicImageUrl(req, parsed.title, season);
-    const finalName = goalName(parsed.title, season, plan.resolved.kind);
+    const finalName = goalName(plan.canonicalTitle, season, plan.resolved.kind);
 
     const goal = await createGoal({
       name: finalName,
-      amount: parsed.amount,
-      imageUrl
+      amount: parsed.amount
     });
+
+    const upload = await uploadGoalImage(goal.id, rendered.image, 'poster.jpg');
 
     addHistory({
       ok: true,
@@ -147,9 +147,10 @@ app.get('/se/meta', async (req, res) => {
       tmdbTitle: plan.canonicalTitle,
       imageSource: plan.media.source,
       imageBytes: rendered.image.length,
-      imageUrl,
+      imageUrl: makePublicImageUrl(req, parsed.title, season),
       incentiveId: goal.id || null,
-      status: goal.status
+      status: goal.status,
+      uploadStatus: upload.status
     });
 
     return res.send(`Meta criada: ${finalName} - R$ ${moneyBR(parsed.amount)}`.slice(0, 390));
