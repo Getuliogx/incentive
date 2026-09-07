@@ -111,7 +111,7 @@ https://SEU-SERVICO.onrender.com/api/history
 Nao coloque tokens no GitHub. Cole-os em **Render > Web Service > Environment**. O Bearer do Incentive pode expirar; quando isso acontecer, substitua somente `INCENTIVE_BEARER_TOKEN` no Render.
 
 
-## Versao 2.2.0 - correcoes
+## Versao 2.3.0 - correcoes
 
 - A imagem e gerada e validada em 1920x1080 **antes** de criar a meta no Incentive.
 - O link da imagem agora usa uma rota curta `.jpg`, sem query string.
@@ -125,6 +125,10 @@ Nao coloque tokens no GitHub. Cole-os em **Render > Web Service > Environment**.
 A ordem de imagem continua: poster da temporada -> still de episodio -> backdrop -> poster.
 
 
-## Correção 2.2.0
+## Correção 2.3.0
 - não usa mais URL externa no campo `image`; agora cria a meta e faz o upload local do JPG 1920x1080 no endpoint do Incentive.
 - título usa o nome canônico da TMDB com temporada, ex.: `Frieren - 1ª Temporada`.
+
+
+## Correção 2.3.0
+O PUT de criação do Incentive pode retornar o ID como texto puro, JSON, objeto aninhado ou no header Location. Esta versão reconhece todos esses formatos antes de fazer o upload local do JPG em `/v1/panel/interactions/goal/{ID}/image`.

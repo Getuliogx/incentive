@@ -36,20 +36,7 @@ function commonHeaders(extra = {}) {
   };
 }
 
-function findId(data) {
-  if (!data || typeof data !== 'object') return '';
-  return (
-    data.id ||
-    data.goalId ||
-    data.slug ||
-    data.data?.id ||
-    data.data?.goalId ||
-    data.result?.id ||
-    data.result?.goalId ||
-    data.goal?.id ||
-    ''
-  );
-}
+import { extractGoalId } from './id.js';
 
 export async function createGoal({ name, amount }) {
   const payload = makeGoalPayload({ name, amount });
@@ -59,22 +46,34 @@ export async function createGoal({ name, amount }) {
     maxRedirects: 2,
     validateStatus: s => s >= 200 && s < 300
   });
-  return { status: response.status, id: findId(response.data), data: response.data, payload };
+  const id = extractGoalId(response.data, response.headers);
+  return {
+    status: response.status,
+    id,
+    data: response.data,
+    payload,
+    responseType: typeof response.data
+  };
 }
 
-export async function uploadGoalImage(goalId, imageBuffer, filename = 'poster.jpg') {
-  if (!goalId) throw new Error('Incentive nao retornou o ID da meta para upload da imagem');
+export async function uploadGoalImage(goalId, imageBuffer, filename = 'POSTER.jpg') {
+  if (!goalId) throw new Error('Incentive criou a meta, mas o ID nao foi reconhecido');
   if (!imageBuffer?.length) throw new Error('Buffer de imagem vazio');
 
   const form = new FormData();
-  const blob = new Blob([imageBuffer], { type: 'image/jpeg' });
-  form.append('image', blob, filename);
+  form.append('image', new Blob([imageBuffer], { type: 'image/jpeg' }), filename);
 
-  const response = await axios.put(`https://api.incentive.gg/v1/panel/interactions/goal/${encodeURIComponent(goalId)}/image`, form, {
-    headers: commonHeaders(form.getHeaders ? form.getHeaders() : {}),
-    timeout: Math.max(config.incentive.timeoutMs, 12000),
-    maxRedirects: 2,
-    validateStatus: s => s >= 200 && s < 300
-  });
+  const response = await axios.put(
+    `https://api.incentive.gg/v1/panel/interactions/goal/${encodeURIComponent(goalId)}/image`,
+    form,
+    {
+      headers: commonHeaders(),
+      timeout: Math.max(config.incentive.timeoutMs, 12000),
+      maxRedirects: 2,
+      maxBodyLength: Infinity,
+      maxContentLength: Infinity,
+      validateStatus: s => s >= 200 && s < 300
+    }
+  );
   return { status: response.status, data: response.data };
 }

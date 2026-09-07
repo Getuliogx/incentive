@@ -1,1 +1,1 @@
-2.2.0 - corrigido upload local da imagem do Incentive e título da temporada
+2.3.0 - upload local + reconhecimento robusto do ID retornado pelo Incentive

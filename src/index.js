@@ -61,7 +61,7 @@ function sendJpeg(res, out) {
 }
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'incentive-meta', version: '2.2.0', tmdb: true, incentive: true });
+  res.json({ ok: true, service: 'incentive-meta', version: '2.3.0', tmdb: true, incentive: true });
 });
 
 app.get('/api/preview', async (req, res) => {
@@ -136,7 +136,7 @@ app.get('/se/meta', async (req, res) => {
       amount: parsed.amount
     });
 
-    const upload = await uploadGoalImage(goal.id, rendered.image, 'poster.jpg');
+    const upload = await uploadGoalImage(goal.id, rendered.image, 'POSTER.jpg');
 
     addHistory({
       ok: true,
@@ -149,6 +149,7 @@ app.get('/se/meta', async (req, res) => {
       imageBytes: rendered.image.length,
       imageUrl: makePublicImageUrl(req, parsed.title, season),
       incentiveId: goal.id || null,
+      createResponseType: goal.responseType,
       status: goal.status,
       uploadStatus: upload.status
     });
