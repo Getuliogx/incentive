@@ -1,51 +1,58 @@
 import express from 'express';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { config, assertBaseConfig } from './config.js';
+import { config, assertConfig } from './config.js';
 import { parseMetaCommand } from './command.js';
-import { resolveShow, resolveSeasonMedia, chooseMedia } from './tmdb.js';
-import { renderSeasonImage, makeImageUrl, verifyImageSignature } from './image.js';
-import { createIncentiveGoal, incentiveConfigured } from './incentive.js';
+import { makePublicImageUrl, renderSeasonImage, resolveImagePlan } from './image.js';
+import { createGoal } from './incentive.js';
 
-assertBaseConfig();
+assertConfig();
+
 const app = express();
 app.disable('x-powered-by');
+app.set('trust proxy', true);
 app.use(express.json({ limit: '64kb' }));
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 app.use(express.static(path.join(here, '..', 'public')));
 
-function publicBase(req) {
-  return config.publicBaseUrl || `${req.protocol}://${req.get('host')}`;
+const history = [];
+function addHistory(item) {
+  history.unshift({ at: new Date().toISOString(), ...item });
+  history.length = Math.min(history.length, 20);
 }
 
-function safeUser(s) {
-  return String(s || '').replace(/^@/, '').trim().toLowerCase();
+function commandAllowed(req) {
+  if (!config.commandKey) return true;
+  return String(req.query.key || '') === config.commandKey;
 }
 
-function chatAuthorized(req) {
-  const secret = String(req.query.key || '');
-  if (!secret || secret !== config.chatSecret) return false;
-  if (!config.allowedChatUsers.length) return true;
-  return config.allowedChatUsers.includes(safeUser(req.query.user));
+function moneyBR(n) {
+  return Number(n).toFixed(2).replace('.', ',');
 }
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, incentive: incentiveConfigured(), tmdb: Boolean(config.tmdb.bearer || config.tmdb.apiKey) });
+  res.json({ ok: true, service: 'incentive-meta', version: '2.0.0', tmdb: true, incentive: true });
 });
 
 app.get('/api/preview', async (req, res) => {
   try {
     const title = String(req.query.title || '').trim();
     const season = req.query.season === undefined || req.query.season === '' ? null : Number(req.query.season);
-    if (!title) return res.status(400).json({ error: 'title obrigatorio' });
-    const show = await resolveShow(title);
-    const seasonData = await resolveSeasonMedia(show.id, season);
-    const media = chooseMedia(show, seasonData);
-    const imageUrl = makeImageUrl(publicBase(req), show.name || title, season);
-    res.json({ tmdbId: show.id, title: show.name, originalTitle: show.original_name, season, seasonName: seasonData?.name || null, selected: media.source, image1920x1080: imageUrl });
+    if (!title) return res.status(400).json({ error: 'Informe title' });
+    const plan = await resolveImagePlan(title, season);
+    res.json({
+      ok: true,
+      title: plan.canonicalTitle,
+      tmdbId: plan.resolved.data.id,
+      mediaType: plan.resolved.kind,
+      season,
+      seasonName: plan.season?.name || null,
+      selectedImage: plan.media.source,
+      image1920x1080: makePublicImageUrl(req, title, season)
+    });
   } catch (e) {
-    res.status(500).json({ error: e.message });
+    res.status(404).json({ ok: false, error: e.message });
   }
 });
 
@@ -53,51 +60,69 @@ app.get('/image/season', async (req, res) => {
   try {
     const title = String(req.query.title || '').trim();
     const season = req.query.season === undefined || req.query.season === '' ? null : Number(req.query.season);
-    const sig = String(req.query.sig || '');
-    if (!title || !verifyImageSignature(title, season, sig)) return res.status(403).send('forbidden');
+    if (!title) return res.status(400).send('Falta title');
+    if (season !== null && (!Number.isInteger(season) || season < 0 || season > 200)) return res.status(400).send('Temporada invalida');
+
     const out = await renderSeasonImage(title, season);
     res.set('Content-Type', 'image/jpeg');
+    res.set('Content-Disposition', 'inline; filename="meta-1920x1080.jpg"');
     res.set('Cache-Control', 'public, max-age=86400, stale-while-revalidate=604800');
+    res.set('X-Image-Width', '1920');
+    res.set('X-Image-Height', '1080');
     res.set('X-TMDB-Source', out.source);
     res.send(out.image);
   } catch (e) {
-    res.status(404).send(`imagem indisponivel: ${e.message}`);
+    console.error('[IMAGE]', e?.response?.data || e.message || e);
+    res.status(404).send(`Imagem indisponivel: ${e.message}`);
   }
 });
 
-// Endpoint feito para $(customapi) do StreamElements: GET, resposta curta (<400 bytes).
+// Endpoint chamado pelo $(customapi) do StreamElements.
 app.get('/se/meta', async (req, res) => {
-  if (!chatAuthorized(req)) return res.status(200).type('text/plain').send('Comando nao autorizado.');
+  res.type('text/plain; charset=utf-8');
+  if (!commandAllowed(req)) return res.status(200).send('Comando nao autorizado.');
+
   try {
     const parsed = parseMetaCommand(req.query.q);
-    const user = safeUser(req.query.user);
-    const provider = String(req.query.provider || '').toLowerCase();
 
-    const show = await resolveShow(parsed.title);
-    const season = await resolveSeasonMedia(show.id, parsed.season);
-    const media = chooseMedia(show, season); // valida que ha imagem antes de criar a meta
-    const canonicalTitle = show.name || parsed.title;
-    const imageUrl = makeImageUrl(publicBase(req), canonicalTitle, parsed.season);
+    // Confirma que o titulo/temporada existem e que ha uma imagem utilizavel.
+    const plan = await resolveImagePlan(parsed.title, parsed.season);
+    const imageUrl = makePublicImageUrl(req, parsed.title, parsed.season);
 
-    const result = await createIncentiveGoal({
-      ...parsed,
-      title: canonicalTitle,
-      tmdbId: show.id,
-      imageUrl,
-      imageSource: media.source,
-      user,
-      provider
+    // Mantem exatamente o nome digitado no chat. A temporada controla a imagem.
+    const goal = await createGoal({
+      name: parsed.title,
+      amount: parsed.amount,
+      imageUrl
     });
 
-    const seasonText = parsed.season == null ? '' : ` T${parsed.season}`;
-    const idText = result.result ? ` [${String(result.result).slice(0, 40)}]` : '';
-    return res.type('text/plain').send(`Meta criada: ${canonicalTitle}${seasonText} - R$ ${parsed.amount.toFixed(2).replace('.', ',')}${idText}`.slice(0, 390));
+    addHistory({
+      ok: true,
+      name: parsed.title,
+      amount: parsed.amount,
+      season: parsed.season,
+      tmdbTitle: plan.canonicalTitle,
+      imageSource: plan.media.source,
+      imageUrl,
+      incentiveId: goal.id || null,
+      status: goal.status
+    });
+
+    const t = parsed.season === null ? '' : ` T${parsed.season}`;
+    return res.send(`Meta criada: ${parsed.title}${t} - R$ ${moneyBR(parsed.amount)}`.slice(0, 390));
   } catch (e) {
-    console.error('[META]', e?.response?.data || e.message || e);
-    return res.status(200).type('text/plain').send(`Falha: ${String(e.message || e).slice(0, 330)}`);
+    const apiMsg = e?.response?.data;
+    const raw = apiMsg ? (typeof apiMsg === 'string' ? apiMsg : JSON.stringify(apiMsg)) : (e.message || String(e));
+    addHistory({ ok: false, error: raw.slice(0, 500) });
+    console.error('[META]', raw);
+    return res.status(200).send(`Falha: ${raw}`.slice(0, 390));
   }
+});
+
+app.get('/api/history', (req, res) => {
+  res.json({ items: history });
 });
 
 app.listen(config.port, config.host, () => {
-  console.log(`Incentive Chat Meta em http://${config.host}:${config.port}`);
+  console.log(`Web Service pronto em ${config.host}:${config.port}`);
 });

@@ -1,10 +1,14 @@
 COMANDO: !meta
-PERMISSAO: Moderator ou Broadcaster
+PERMISSAO NO STREAMELEMENTS: Moderator ou Broadcaster
 
-RESPOSTA:
-$(customapi https://SEU-SERVICO.onrender.com/se/meta?key=SEU_CHAT_SECRET&q=$(queryescape $(1:))&user=$(queryescape $(sender.name))&provider=$(provider))
+RESPOSTA DO COMANDO:
+$(customapi https://SEU-SERVICO.onrender.com/se/meta?q=$(queryescape ${1:}))
 
-EXEMPLOS:
-!meta 150 | 2 | One Piece
-!meta 80,50 | T3 | Naruto Shippuden
+EXEMPLOS NO CHAT:
+!meta 300 | T1 | Pokémon
+!meta 150 | T2 | One Piece
+!meta 80,50 | Naruto Shippuden | T3
 !meta 50 | Frieren
+
+Se voce optar por configurar COMMAND_KEY no Render, use:
+$(customapi https://SEU-SERVICO.onrender.com/se/meta?key=SUA_CHAVE&q=$(queryescape ${1:}))

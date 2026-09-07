@@ -1,15 +1,23 @@
 RENDER -> NEW -> WEB SERVICE
 
-Repository: seu repositorio GitHub
-Runtime: Node
-Build Command: npm install
-Start Command: npm start
-Health Check Path: /health
+1. Conecte o repositorio do GitHub.
+2. Runtime/Language: Node
+3. Build Command: npm install
+4. Start Command: npm start
+5. Health Check Path: /health
 
-Environment obrigatorio:
-TMDB_BEARER_TOKEN=SEU_TOKEN
-CHAT_SECRET=SEGREDO_ALEATORIO
-PUBLIC_BASE_URL=https://SEU-SERVICO.onrender.com
-INCENTIVE_CREATE_CURL_B64=GERADO_EM_/configurar.html
+ENVIRONMENT (somente estas duas sao obrigatorias):
 
-Nao configure PORT manualmente. O Render fornece PORT e o app usa 0.0.0.0:$PORT.
+TMDB_BEARER_TOKEN = seu token TMDB
+INCENTIVE_BEARER_TOKEN = seu Bearer do Incentive
+
+NAO criar PORT manualmente. O Render fornece PORT automaticamente.
+NAO precisa PUBLIC_BASE_URL.
+NAO precisa INCENTIVE_CREATE_CURL_B64.
+NAO precisa GitHub Actions.
+NAO precisa Blueprint/render.yaml.
+
+Depois do deploy, abra:
+https://SEU-SERVICO.onrender.com/
+
+E no StreamElements use o conteudo de STREAM_ELEMENTS_COMMAND.txt.

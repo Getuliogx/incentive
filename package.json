@@ -1,6 +1,6 @@
 {
-  "name": "incentive-chat-render",
-  "version": "1.0.0",
+  "name": "incentive-render-web-service-pronto",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
   "engines": {
@@ -8,7 +8,7 @@
   },
   "scripts": {
     "start": "node src/index.js",
-    "check": "node --check src/index.js && node --check src/config.js && node --check src/command.js && node --check src/tmdb.js && node --check src/image.js && node --check src/incentive.js && node --check src/curlRecipe.js && node scripts/selftest.js"
+    "check": "node --check src/index.js && node --check src/config.js && node --check src/command.js && node --check src/tmdb.js && node --check src/image.js && node --check src/incentive.js && node scripts/selftest.js"
   },
   "dependencies": {
     "axios": "^1.7.9",

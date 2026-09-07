@@ -1,76 +1,49 @@
 import axios from 'axios';
 import { config } from './config.js';
-import { decodeCurlB64 } from './curlRecipe.js';
 
-function getPath(obj, path) {
-  if (!path) return undefined;
-  return String(path).split('.').filter(Boolean).reduce((v, k) => v == null ? undefined : v[k], obj);
-}
-
-function template(value, vars) {
-  if (value == null) return value;
-  let s = String(value);
-  for (const [k, v] of Object.entries(vars)) {
-    s = s.split(`{{${k}}}`).join(String(v ?? ''));
-  }
-  return s;
-}
-
-function recipeFromConfig() {
-  if (config.incentive.curlB64) return decodeCurlB64(config.incentive.curlB64);
-  if (!config.incentive.url) throw new Error('Incentive ainda nao configurado: falta INCENTIVE_CREATE_CURL_B64 ou INCENTIVE_CREATE_URL.');
+export function makeGoalPayload({ name, amount, imageUrl }) {
   return {
-    url: config.incentive.url,
-    method: config.incentive.method,
-    headers: config.incentive.headers,
-    body: config.incentive.bodyTemplate || null
-  };
-}
-
-export function incentiveConfigured() {
-  return Boolean(config.incentive.curlB64 || config.incentive.url);
-}
-
-export async function createIncentiveGoal(meta) {
-  const recipe = recipeFromConfig();
-  const vars = {
-    TITLE: meta.title,
-    AMOUNT: meta.amount.toFixed(2),
-    AMOUNT_CENTS: meta.amountCents,
-    SEASON: meta.season ?? '',
-    IMAGE_URL: meta.imageUrl,
-    TMDB_ID: meta.tmdbId,
-    USER: meta.user || '',
-    PROVIDER: meta.provider || ''
-  };
-
-  const url = template(recipe.url, vars);
-  const unsafeReplayHeaders = new Set(['content-length', 'host', 'connection', 'accept-encoding']);
-  const headers = Object.fromEntries(
-    Object.entries(recipe.headers || {})
-      .filter(([k]) => !unsafeReplayHeaders.has(k.toLowerCase()))
-      .map(([k, v]) => [k, template(v, vars)])
-  );
-  let data = recipe.body == null ? undefined : template(recipe.body, vars);
-
-  // Se o corpo parecer JSON, manda objeto JSON. Caso contrario preserva texto/form-encoded.
-  if (typeof data === 'string') {
-    const ct = Object.entries(headers).find(([k]) => k.toLowerCase() === 'content-type')?.[1] || '';
-    if (ct.includes('application/json') || /^[\s]*[\[{]/.test(data)) {
-      try { data = JSON.parse(data); } catch { /* preserva raw */ }
+    name,
+    slug: '',
+    minDonation: config.incentive.minDonation,
+    maxValue: amount,
+    currentValue: 0,
+    image: imageUrl || '',
+    enableAlerts: config.incentive.enableAlerts,
+    type: config.incentive.type,
+    alertWidget: {
+      id: '',
+      type: 'default-config',
+      model: 'default',
+      useDefaultAlert: false,
+      variables: []
+    },
+    goalWidget: {
+      id: '',
+      model: 'default',
+      variables: []
     }
-  }
+  };
+}
 
-  const response = await axios.request({
-    url,
-    method: recipe.method || 'POST',
-    headers,
-    data,
+function findId(data) {
+  if (!data || typeof data !== 'object') return '';
+  return data.id || data.goalId || data.slug || data.data?.id || data.data?.goalId || data.result?.id || '';
+}
+
+export async function createGoal({ name, amount, imageUrl }) {
+  const payload = makeGoalPayload({ name, amount, imageUrl });
+  const response = await axios.put(config.incentive.endpoint, payload, {
+    headers: {
+      accept: 'application/json, text/plain, */*',
+      authorization: `Bearer ${config.incentive.bearer}`,
+      'content-type': 'application/json',
+      origin: 'https://incentive.gg',
+      referer: 'https://incentive.gg/'
+    },
     timeout: config.incentive.timeoutMs,
-    maxRedirects: 3,
-    validateStatus: s => s >= 200 && s < 400
+    maxRedirects: 2,
+    validateStatus: s => s >= 200 && s < 300
   });
-
-  const result = config.incentive.resultPath ? getPath(response.data, config.incentive.resultPath) : undefined;
-  return { status: response.status, result, data: response.data };
+  return { status: response.status, id: findId(response.data), data: response.data, payload };
 }

@@ -1,11 +1,23 @@
 <!doctype html>
 <html lang="pt-BR">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Incentive Meta - Render Web Service</title>
-<style>body{font-family:system-ui,Segoe UI,Arial;background:#101114;color:#eee;max-width:900px;margin:40px auto;padding:0 20px}code,pre,textarea,input{font-family:ui-monospace,Consolas,monospace}.card{background:#191b20;border:1px solid #2b2e36;border-radius:14px;padding:20px;margin:16px 0}input,textarea{box-sizing:border-box;width:100%;background:#0f1013;color:#fff;border:1px solid #353944;border-radius:8px;padding:10px}button{padding:10px 16px;border:0;border-radius:8px;cursor:pointer}.ok{opacity:.8}a{color:#9ecbff}</style></head>
-<body>
-<h1>Incentive Meta - Render Web Service</h1>
-<div class="card"><b>Status</b><pre id="status">carregando...</pre></div>
-<div class="card"><b>Teste de imagem TMDB</b><p>Depois do deploy, use <code>/api/preview?title=Nome&season=2</code>.</p></div>
-<div class="card"><b>Configurar cURL do Incentive</b><p>Abra <a href="/configurar.html">configurar.html</a>. A conversao acontece somente no seu navegador.</p></div>
-<script>fetch('/health').then(r=>r.json()).then(j=>status.textContent=JSON.stringify(j,null,2)).catch(e=>status.textContent=e.message)</script>
-</body></html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Incentive Meta Web Service</title>
+<style>
+body{font-family:Arial,sans-serif;background:#0e1620;color:#eef4fb;margin:0;padding:32px}main{max-width:850px;margin:auto;background:#16222e;border:1px solid #2d3d4d;border-radius:16px;padding:28px}code{background:#0b1118;padding:3px 7px;border-radius:6px}input{width:100%;box-sizing:border-box;padding:12px;margin:8px 0;background:#0b1118;color:#fff;border:1px solid #42566b;border-radius:8px}button{padding:11px 16px;border:0;border-radius:8px;cursor:pointer}img{max-width:100%;margin-top:16px;border-radius:10px}.ok{color:#71e48c}.bad{color:#ff8585}</style>
+</head>
+<body><main>
+<h1>Incentive Meta — Web Service</h1>
+<p id="status">Verificando...</p>
+<p>Teste a imagem 1920×1080 antes do chat:</p>
+<input id="title" value="Pokémon" placeholder="Nome da série/anime">
+<input id="season" value="1" placeholder="Temporada">
+<button onclick="preview()">Testar imagem</button>
+<pre id="out"></pre><img id="img" alt="">
+<script>
+fetch('/health').then(r=>r.json()).then(j=>status.innerHTML='<span class="ok">ONLINE</span> — versão '+j.version).catch(()=>status.innerHTML='<span class="bad">ERRO</span>');
+async function preview(){const t=title.value.trim(),s=season.value.trim();const u='/api/preview?title='+encodeURIComponent(t)+(s?'&season='+encodeURIComponent(s):'');const r=await fetch(u),j=await r.json();out.textContent=JSON.stringify(j,null,2);img.src=j.image1920x1080||''}
+</script>
+</main></body>
+</html>
