@@ -1,1 +1,1 @@
-2.0.0 - Render Web Service direto + TMDB + Incentive PUT /v1/panel/interactions/goal
+2.1.0 - corrige imagem 1920x1080 e adiciona temporada automaticamente ao titulo

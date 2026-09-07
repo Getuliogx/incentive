@@ -10,13 +10,29 @@ function cachePut(key, value) {
   while (cache.size > config.image.cacheItems) cache.delete(cache.keys().next().value);
 }
 
+function imageKey(title, season) {
+  return Buffer.from(JSON.stringify({ t: String(title), s: season ?? null }), 'utf8').toString('base64url');
+}
+
+export function decodeImageKey(raw) {
+  const key = String(raw || '').replace(/\.jpg$/i, '');
+  let data;
+  try {
+    data = JSON.parse(Buffer.from(key, 'base64url').toString('utf8'));
+  } catch {
+    throw new Error('Chave de imagem invalida');
+  }
+  const title = String(data?.t || '').trim();
+  const season = data?.s === null || data?.s === undefined || data?.s === '' ? null : Number(data.s);
+  if (!title) throw new Error('Titulo da imagem invalido');
+  if (season !== null && (!Number.isInteger(season) || season < 0 || season > 200)) throw new Error('Temporada da imagem invalida');
+  return { title, season };
+}
+
 export function makePublicImageUrl(req, title, season) {
   const proto = String(req.headers['x-forwarded-proto'] || req.protocol || 'https').split(',')[0].trim();
   const host = req.get('host');
-  const u = new URL('/image/season', `${proto}://${host}`);
-  u.searchParams.set('title', title);
-  if (season !== null && season !== undefined) u.searchParams.set('season', String(season));
-  return u.toString();
+  return `${proto}://${host}/image/season/${imageKey(title, season)}.jpg`;
 }
 
 async function posterTo1920x1080(buf) {

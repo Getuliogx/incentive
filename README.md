@@ -109,3 +109,17 @@ https://SEU-SERVICO.onrender.com/api/history
 ## Segredos
 
 Nao coloque tokens no GitHub. Cole-os em **Render > Web Service > Environment**. O Bearer do Incentive pode expirar; quando isso acontecer, substitua somente `INCENTIVE_BEARER_TOKEN` no Render.
+
+
+## Versao 2.1.0 - correcoes
+
+- A imagem e gerada e validada em 1920x1080 **antes** de criar a meta no Incentive.
+- O link da imagem agora usa uma rota curta `.jpg`, sem query string.
+- Series/animes sem temporada informada usam automaticamente a **1ª temporada**.
+- A temporada entra automaticamente no titulo da meta:
+  - `!meta 500 | Frieren` -> `Frieren - 1ª Temporada`
+  - `!meta 200 | T2 | Avatar: A Lenda de Aang` -> `Avatar: A Lenda de Aang - 2ª Temporada`
+  - `!meta 150 | CDZ | 3` -> `CDZ - 3ª Temporada`
+- Filmes continuam sem sufixo de temporada.
+
+A ordem de imagem continua: poster da temporada -> still de episodio -> backdrop -> poster.

@@ -12,3 +12,9 @@ EXEMPLOS NO CHAT:
 
 Se voce optar por configurar COMMAND_KEY no Render, use:
 $(customapi https://SEU-SERVICO.onrender.com/se/meta?key=SUA_CHAVE&q=$(queryescape ${1:}))
+
+
+TEMPORADAS:
+!meta 500 | Frieren                  -> usa 1ª Temporada automaticamente
+!meta 200 | T2 | Avatar: A Lenda de Aang -> 2ª Temporada
+!meta 150 | CDZ | 3                  -> 3ª Temporada
