@@ -1,0 +1,11 @@
+<!doctype html>
+<html lang="pt-BR">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Incentive Meta - Render Web Service</title>
+<style>body{font-family:system-ui,Segoe UI,Arial;background:#101114;color:#eee;max-width:900px;margin:40px auto;padding:0 20px}code,pre,textarea,input{font-family:ui-monospace,Consolas,monospace}.card{background:#191b20;border:1px solid #2b2e36;border-radius:14px;padding:20px;margin:16px 0}input,textarea{box-sizing:border-box;width:100%;background:#0f1013;color:#fff;border:1px solid #353944;border-radius:8px;padding:10px}button{padding:10px 16px;border:0;border-radius:8px;cursor:pointer}.ok{opacity:.8}a{color:#9ecbff}</style></head>
+<body>
+<h1>Incentive Meta - Render Web Service</h1>
+<div class="card"><b>Status</b><pre id="status">carregando...</pre></div>
+<div class="card"><b>Teste de imagem TMDB</b><p>Depois do deploy, use <code>/api/preview?title=Nome&season=2</code>.</p></div>
+<div class="card"><b>Configurar cURL do Incentive</b><p>Abra <a href="/configurar.html">configurar.html</a>. A conversao acontece somente no seu navegador.</p></div>
+<script>fetch('/health').then(r=>r.json()).then(j=>status.textContent=JSON.stringify(j,null,2)).catch(e=>status.textContent=e.message)</script>
+</body></html>

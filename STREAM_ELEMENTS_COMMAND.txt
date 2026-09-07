@@ -1,0 +1,10 @@
+COMANDO: !meta
+PERMISSAO: Moderator ou Broadcaster
+
+RESPOSTA:
+$(customapi https://SEU-SERVICO.onrender.com/se/meta?key=SEU_CHAT_SECRET&q=$(queryescape $(1:))&user=$(queryescape $(sender.name))&provider=$(provider))
+
+EXEMPLOS:
+!meta 150 | 2 | One Piece
+!meta 80,50 | T3 | Naruto Shippuden
+!meta 50 | Frieren

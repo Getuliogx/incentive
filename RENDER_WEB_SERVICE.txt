@@ -1,0 +1,15 @@
+RENDER -> NEW -> WEB SERVICE
+
+Repository: seu repositorio GitHub
+Runtime: Node
+Build Command: npm install
+Start Command: npm start
+Health Check Path: /health
+
+Environment obrigatorio:
+TMDB_BEARER_TOKEN=SEU_TOKEN
+CHAT_SECRET=SEGREDO_ALEATORIO
+PUBLIC_BASE_URL=https://SEU-SERVICO.onrender.com
+INCENTIVE_CREATE_CURL_B64=GERADO_EM_/configurar.html
+
+Nao configure PORT manualmente. O Render fornece PORT e o app usa 0.0.0.0:$PORT.

@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Preparar cURL do Incentive</title>
+<style>body{font-family:system-ui,Segoe UI,Arial;background:#101114;color:#eee;max-width:1000px;margin:30px auto;padding:0 20px}.box{background:#191b20;border:1px solid #2b2e36;border-radius:14px;padding:18px;margin:14px 0}textarea,input{width:100%;box-sizing:border-box;background:#0d0f12;color:#fff;border:1px solid #343945;border-radius:8px;padding:10px;font-family:Consolas,monospace}textarea{min-height:220px}button{padding:10px 16px;border:0;border-radius:8px;cursor:pointer}code{font-family:Consolas,monospace}</style></head>
+<body><h1>Preparar requisição do Incentive</h1>
+<div class="box"><p>1. No painel do Incentive, crie UMA meta de teste. Antes de confirmar, abra DevTools (F12) → Network. Use um nome raro e um valor raro para conseguirmos transformar a requisição em template.</p>
+<label>Título usado no teste</label><input id="sampleTitle" value="AUTO_META_TESTE_98765">
+<label>Valor usado no teste (exatamente como aparece na requisição)</label><input id="sampleAmount" value="123.45">
+<label>URL/identificador da imagem usada no teste (opcional)</label><input id="sampleImage" placeholder="cole somente se a requisição de criar meta contiver a imagem/URL/id">
+<p>2. Na requisição que EFETIVAMENTE cria a meta: botão direito → Copy → Copy as cURL (bash). Cole abaixo.</p><textarea id="curl" placeholder="curl 'https://...' ..."></textarea>
+<button onclick="go()">Gerar variável do Render</button></div>
+<div class="box"><b>INCENTIVE_CREATE_CURL_B64</b><textarea id="out" readonly></textarea><p>Copie o resultado para Render → Environment → <code>INCENTIVE_CREATE_CURL_B64</code>.</p></div>
+<script>
+function b64unicode(s){const bytes=new TextEncoder().encode(s);let bin='';for(const b of bytes)bin+=String.fromCharCode(b);return btoa(bin)}
+function replaceAllLiteral(s,a,b){return a?s.split(a).join(b):s}
+function go(){let c=document.getElementById('curl').value.trim();const t=document.getElementById('sampleTitle').value;const a=document.getElementById('sampleAmount').value;const i=document.getElementById('sampleImage').value;c=replaceAllLiteral(c,t,'{{TITLE}}');c=replaceAllLiteral(c,a,'{{AMOUNT}}');if(i)c=replaceAllLiteral(c,i,'{{IMAGE_URL}}');document.getElementById('out').value=b64unicode(c)}
+</script></body></html>
