@@ -137,3 +137,10 @@ O PUT de criação do Incentive pode retornar o ID como texto puro, JSON, objeto
 ## Correção 2.4.0
 - prefere imagens widescreen (still/backdrop) antes de poster.
 - quando só houver poster, ele é recortado direto em 1920x1080, sem cópia desfocada atrás e sem layout de retrato centralizado.
+
+
+## Correção 2.5.0 — imagem de capa
+- removida a prioridade de frame aleatório de episódio.
+- agora usa primeiro o `backdrop_path` oficial principal do TMDB, em widescreen.
+- still de episódio ficou apenas como último fallback.
+- poster de temporada, quando necessário, é convertido para 1920x1080 sem cópia desfocada ao fundo.

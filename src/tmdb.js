@@ -126,12 +126,18 @@ function bestPoster(season) {
 }
 
 function bestBackdrop(item) {
-  const backdrops = [...(item?.images?.backdrops || [])];
+  // O backdrop_path do proprio TMDB e a arte principal escolhida para o titulo.
+  // Ele costuma ser muito melhor para uma capa 16:9 do que um frame aleatorio de episodio.
+  if (item?.backdrop_path) return item.backdrop_path;
+
+  const backdrops = [...(item?.images?.backdrops || [])]
+    .filter(x => x?.file_path && Number(x.width || 0) >= 1000 && Number(x.height || 0) >= 500);
   backdrops.sort((a, b) =>
+    (Number(b.vote_count || 0) - Number(a.vote_count || 0)) ||
     (Number(b.vote_average || 0) - Number(a.vote_average || 0)) ||
     ((Number(b.width || 0) * Number(b.height || 0)) - (Number(a.width || 0) * Number(a.height || 0)))
   );
-  return backdrops[0]?.file_path || item?.backdrop_path || null;
+  return backdrops[0]?.file_path || null;
 }
 
 function bestStill(episodes = []) {
@@ -145,20 +151,23 @@ function bestStill(episodes = []) {
 
 export function chooseMedia(resolved, season) {
   const item = resolved.data;
+
+  // REGRA PRINCIPAL: nunca escolher frame de episodio antes da arte oficial.
+  // Para meta, uma arte promocional limpa funciona muito melhor que uma cena aleatoria.
+  const backdrop = bestBackdrop(item);
+  if (backdrop) return { kind: 'landscape', source: `${resolved.kind}-official-backdrop`, path: backdrop };
+
+  // Sem backdrop oficial, tenta a arte da temporada e transforma em 16:9 sem duplicar a imagem atras.
   if (resolved.kind === 'tv' && season) {
-    const still = bestStill(season.episodes || []);
-    if (still) return { kind: 'landscape', source: 'season-episode-still', path: still };
-
-    const seriesBackdrop = bestBackdrop(item);
-    if (seriesBackdrop) return { kind: 'landscape', source: 'tv-backdrop', path: seriesBackdrop };
-
     const seasonPoster = bestPoster(season);
-    if (seasonPoster) return { kind: 'poster', source: 'season-poster', path: seasonPoster };
+    if (seasonPoster) return { kind: 'poster', source: 'season-poster-fallback', path: seasonPoster };
+
+    // Still fica SOMENTE como ultimo fallback de temporada.
+    const still = bestStill(season.episodes || []);
+    if (still) return { kind: 'landscape', source: 'season-episode-still-last-fallback', path: still };
   }
 
-  const backdrop = bestBackdrop(item);
-  if (backdrop) return { kind: 'landscape', source: `${resolved.kind}-backdrop`, path: backdrop };
-  if (item.poster_path) return { kind: 'poster', source: `${resolved.kind}-poster`, path: item.poster_path };
+  if (item.poster_path) return { kind: 'poster', source: `${resolved.kind}-poster-fallback`, path: item.poster_path };
   throw new Error('TMDB nao possui imagem utilizavel para esse titulo.');
 }
 

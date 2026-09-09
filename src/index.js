@@ -61,7 +61,7 @@ function sendJpeg(res, out) {
 }
 
 app.get('/health', (req, res) => {
-  res.json({ ok: true, service: 'incentive-meta', version: '2.4.0', tmdb: true, incentive: true });
+  res.json({ ok: true, service: 'incentive-meta', version: '2.5.0', tmdb: true, incentive: true });
 });
 
 app.get('/api/preview', async (req, res) => {

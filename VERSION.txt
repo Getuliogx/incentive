@@ -1,1 +1,1 @@
-2.4.0 - imagem mais limpa, sem poster duplicado ao fundo e com preferencia por fundos widescreen
+2.5.0 - arte oficial widescreen primeiro; frames de episodio apenas como ultimo fallback

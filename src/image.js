@@ -57,8 +57,11 @@ async function posterTo1920x1080(buf) {
 }
 
 async function landscapeTo1920x1080(buf) {
+  // Backdrops do TMDB normalmente ja sao 16:9. Centralizar evita o smart-crop
+  // escolher um detalhe estranho da imagem.
   return sharp(buf)
-    .resize(1920, 1080, { fit: 'cover', position: 'attention' })
+    .resize(1920, 1080, { fit: 'cover', position: 'centre' })
+    .sharpen({ sigma: 0.45 })
     .jpeg({ quality: config.image.quality, chromaSubsampling: '4:4:4' })
     .toBuffer();
 }
