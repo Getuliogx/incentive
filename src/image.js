@@ -37,30 +37,21 @@ export function makePublicImageUrl(req, title, season) {
 
 async function posterTo1920x1080(buf) {
   const W = 1920, H = 1080;
-  const background = await sharp(buf)
-    .resize(W, H, { fit: 'cover', position: 'attention' })
-    .blur(28)
-    .modulate({ brightness: 0.52, saturation: 0.9 })
-    .jpeg({ quality: config.image.quality })
-    .toBuffer();
-
-  const poster = await sharp(buf)
-    .resize({ width: 700, height: 1000, fit: 'inside', withoutEnlargement: false })
-    .jpeg({ quality: config.image.quality, chromaSubsampling: '4:4:4' })
-    .toBuffer();
-
-  const meta = await sharp(poster).metadata();
-  const left = Math.round((W - meta.width) / 2);
-  const top = Math.round((H - meta.height) / 2);
-
-  const shadow = Buffer.from(`
+  const overlay = Buffer.from(`
     <svg width="${W}" height="${H}">
-      <defs><filter id="shadow"><feDropShadow dx="0" dy="12" stdDeviation="20" flood-opacity="0.75"/></filter></defs>
-      <rect x="${left}" y="${top}" width="${meta.width}" height="${meta.height}" rx="10" fill="black" opacity="0.30" filter="url(#shadow)"/>
+      <defs>
+        <linearGradient id="v" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="rgba(0,0,0,0.08)"/>
+          <stop offset="100%" stop-color="rgba(0,0,0,0.18)"/>
+        </linearGradient>
+      </defs>
+      <rect width="${W}" height="${H}" fill="url(#v)"/>
     </svg>`);
 
-  return sharp(background)
-    .composite([{ input: shadow }, { input: poster, left, top }])
+  return sharp(buf)
+    .resize(W, H, { fit: 'cover', position: 'attention' })
+    .composite([{ input: overlay }])
+    .sharpen()
     .jpeg({ quality: config.image.quality, chromaSubsampling: '4:4:4' })
     .toBuffer();
 }

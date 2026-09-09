@@ -1,1 +1,1 @@
-2.3.0 - upload local + reconhecimento robusto do ID retornado pelo Incentive
+2.4.0 - imagem mais limpa, sem poster duplicado ao fundo e com preferencia por fundos widescreen

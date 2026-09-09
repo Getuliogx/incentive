@@ -49,7 +49,13 @@ async function searchTv(title) {
   if (!results.length) return null;
   results.sort((a, b) => score(b, title) - score(a, title));
   const hit = results[0];
-  return get(`/tv/${hit.id}`, { language: config.tmdb.language });
+  const item = await get(`/tv/${hit.id}`, { language: config.tmdb.language });
+  try {
+    item.images = await get(`/tv/${hit.id}/images`, {
+      include_image_language: `${config.tmdb.language.split('-')[0]},en,null`
+    });
+  } catch {}
+  return item;
 }
 
 async function searchMovie(title) {
@@ -63,7 +69,13 @@ async function searchMovie(title) {
   if (!results.length) return null;
   results.sort((a, b) => score(b, title) - score(a, title));
   const hit = results[0];
-  return get(`/movie/${hit.id}`, { language: config.tmdb.language });
+  const item = await get(`/movie/${hit.id}`, { language: config.tmdb.language });
+  try {
+    item.images = await get(`/movie/${hit.id}/images`, {
+      include_image_language: `${config.tmdb.language.split('-')[0]},en,null`
+    });
+  } catch {}
+  return item;
 }
 
 export async function resolveTitle(title, seasonNumber = null) {
@@ -113,6 +125,15 @@ function bestPoster(season) {
   return posters[0]?.file_path || season?.poster_path || null;
 }
 
+function bestBackdrop(item) {
+  const backdrops = [...(item?.images?.backdrops || [])];
+  backdrops.sort((a, b) =>
+    (Number(b.vote_average || 0) - Number(a.vote_average || 0)) ||
+    ((Number(b.width || 0) * Number(b.height || 0)) - (Number(a.width || 0) * Number(a.height || 0)))
+  );
+  return backdrops[0]?.file_path || item?.backdrop_path || null;
+}
+
 function bestStill(episodes = []) {
   return [...episodes]
     .filter(e => e.still_path)
@@ -125,12 +146,18 @@ function bestStill(episodes = []) {
 export function chooseMedia(resolved, season) {
   const item = resolved.data;
   if (resolved.kind === 'tv' && season) {
-    const seasonPoster = bestPoster(season);
-    if (seasonPoster) return { kind: 'poster', source: 'season-poster', path: seasonPoster };
     const still = bestStill(season.episodes || []);
     if (still) return { kind: 'landscape', source: 'season-episode-still', path: still };
+
+    const seriesBackdrop = bestBackdrop(item);
+    if (seriesBackdrop) return { kind: 'landscape', source: 'tv-backdrop', path: seriesBackdrop };
+
+    const seasonPoster = bestPoster(season);
+    if (seasonPoster) return { kind: 'poster', source: 'season-poster', path: seasonPoster };
   }
-  if (item.backdrop_path) return { kind: 'landscape', source: `${resolved.kind}-backdrop`, path: item.backdrop_path };
+
+  const backdrop = bestBackdrop(item);
+  if (backdrop) return { kind: 'landscape', source: `${resolved.kind}-backdrop`, path: backdrop };
   if (item.poster_path) return { kind: 'poster', source: `${resolved.kind}-poster`, path: item.poster_path };
   throw new Error('TMDB nao possui imagem utilizavel para esse titulo.');
 }

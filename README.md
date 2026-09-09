@@ -132,3 +132,8 @@ A ordem de imagem continua: poster da temporada -> still de episodio -> backdrop
 
 ## Correção 2.3.0
 O PUT de criação do Incentive pode retornar o ID como texto puro, JSON, objeto aninhado ou no header Location. Esta versão reconhece todos esses formatos antes de fazer o upload local do JPG em `/v1/panel/interactions/goal/{ID}/image`.
+
+
+## Correção 2.4.0
+- prefere imagens widescreen (still/backdrop) antes de poster.
+- quando só houver poster, ele é recortado direto em 1920x1080, sem cópia desfocada atrás e sem layout de retrato centralizado.
